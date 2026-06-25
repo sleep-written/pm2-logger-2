@@ -1,0 +1,24 @@
+{
+  "name": "pm2-logger",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "typeorm": "bleed start ./node_modules/typeorm/cli.js --",
+    "watch": "bleed start ./src/index.ts --watch --",
+    "start": "bleed start ./src/index.ts --",
+    "test": "node --import @bleed-believer/cli --test --"
+  },
+  "devDependencies": {
+    "@bleed-believer/cli": "^1.0.3",
+    "@types/node": "^26.0.0",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@bleed-believer/commander": "^2.1.0",
+    "better-sqlite3": "^12.11.1",
+    "typeorm": "^1.0.0"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
+  }
+}
