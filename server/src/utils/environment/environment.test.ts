@@ -112,7 +112,7 @@ describe('Environment', () => {
     });
 
     describe('Generate file', () => {
-        it('Create "/path/to/project/.env" successfully', async (t: it.TestContext) => {
+        it('Create "/path/to/project/.env"', async (t: it.TestContext) => {
             const inject = new Inject();
             const environment = new Environment('/path/to/project/.env', {
                 foo: { envName: 'APP_FOO', default: 'aaa' },
@@ -126,11 +126,13 @@ describe('Environment', () => {
             ].join('\n'));
         });
 
-        it('Create "/path/to/project/.env" failed (already exists)', async (t: it.TestContext) => {
+        it('Merge values into "/path/to/project/.env"', async (t: it.TestContext) => {
             const inject = new Inject({
                 file: {
                     path: '/path/to/project/.env',
-                    data: {}
+                    data: {
+                        APP_BAR: 'el diablo está jugando contigo'
+                    }
                 }
             });
 
@@ -139,15 +141,11 @@ describe('Environment', () => {
                 bar: { envName: 'APP_BAR', default: 'zzz' },
             }, inject);
 
-            try {
-                await environment.generate();
-                t.assert.fail('The generate method must be fail on this test');
-            } catch (err: any) {
-                t.assert.strictEqual(
-                    err.message,
-                    `The file "${inject.file?.path}" already exists on disk. Cannot overwrite the file`
-                )
-            }
+            await environment.generate();
+            t.assert.strictEqual(inject.file?.content, [
+                `APP_FOO = aaa`,
+                `APP_BAR = el diablo está jugando contigo`,
+            ].join('\n'));
         });
     });
 });

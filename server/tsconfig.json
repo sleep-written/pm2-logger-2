@@ -17,6 +17,6 @@
             "@/*": [ "./src/*" ]
         },
 
-        "types": [ "node" ]
+        "types": [ "node", "express" ]
     }
 }
