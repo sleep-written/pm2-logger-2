@@ -40,10 +40,9 @@ export function toCamelCase(input: unknown): unknown {
             Object
                 .entries(input)
                 .map(([ k, v ]) => [
-                    k.replace(
-                        /_\w/g,
-                        v => v.slice(1).toUpperCase()
-                    ),
+                    k !== k.toUpperCase()
+                    ?   k.replace(/_\w/g, v => v.slice(1).toUpperCase())
+                    :   k,
                     toCamelCase(v)
                 ] as const)
                 .forEach(([ k, v ]) => output[k] = v);
