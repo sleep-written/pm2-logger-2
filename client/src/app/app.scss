@@ -1,0 +1,15 @@
+:host {
+    width: 100dvw;
+    height: 100dvh;
+
+    mat-toolbar {
+        height: 3rem;
+        color: var(--mat-sys-on-primary);
+        background-color: var(--mat-sys-primary);
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+    }
+}
