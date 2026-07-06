@@ -1,0 +1,15 @@
+@let pm2Process = this.pm2Process();
+
+@if (pm2Process) {
+    <div class="lines">
+        @for (line of this.stdout(); track $index) {
+                <div [innerHTML]="this.sanitize(line)"></div>
+            }
+
+        @for (line of this.stderr(); track $index) {
+            <div [innerHTML]="this.sanitize(line)"></div>
+        }
+    </div>
+} @else {
+    <span [style.opacity]=".25">Select a process to inspect...</span>
+}

@@ -1,0 +1,7 @@
+@for (item of this.dataSource(); track item.id) {
+    <button mat-flat-button
+    type="button"
+    (click)="this.pm2Process.emit(item)">
+        <span>{{ item.name }}</span>
+    </button>
+}

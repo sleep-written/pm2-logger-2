@@ -49,7 +49,7 @@ export const serverCommand = new Command({
                 app.get('*hola', (req) => { req.params.hola })
 
                 const server = createServer(app);
-                new SocketServer()
+                const wss = new SocketServer()
                     .use(socketRouter)
                     .bootstrap(server);
 
@@ -59,6 +59,10 @@ export const serverCommand = new Command({
 
                 const destroy = () => {
                     if (server.listening) {
+                        for (const client of wss.clients) {
+                            client.close();
+                        }
+
                         server.close();
                         process.removeAllListeners('SIGINT');
                         process.removeAllListeners('SIGTERM');

@@ -1,0 +1,19 @@
+mat-card {
+    display: flex!important;
+    flex-flow: column nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+
+    mat-card-header {
+        padding: 1rem 1rem 0 1rem;
+    }
+
+    mat-card-content {
+        flex: 1;
+        padding: 0 1rem 0 1rem;
+    }
+
+    mat-card-actions {
+        padding: 0 1rem 1rem 1rem;
+    }
+}

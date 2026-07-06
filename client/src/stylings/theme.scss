@@ -13,12 +13,18 @@ html {
 
   --mat-sys-secondary: light-dark(#ff0000, #ff0000);
   --mat-sys-on-secondary: light-dark(#ffffff, #000000);
+  
+  --mat-sys-surface-variant: light-dark(#f9f9f9, #252525);
+  --mat-sys-on-surface-variant: light-dark(#000000, #ffffff);
+  
+  --mat-sys-surface-container-highest: light-dark(#e9e9e9, #202020);
+  --mat-sys-on-surface-container-highest: light-dark(#000000, #ffffff);
+  
+  --mat-sys-surface-container-high: light-dark(#d9d9d9, #151515);
+  --mat-sys-on-surface-container-high: light-dark(#000000, #ffffff);
 
   --mat-sys-surface: light-dark(#ffffff, #000000);
   --mat-sys-on-surface: light-dark(#000000, #ffffff);
-  
-  --mat-sys-surface-variant: light-dark(#f9f9f9, #151515);
-  --mat-sys-on-surface-variant: light-dark(#000000, #ffffff);
 
   @include mat.theme(
     (

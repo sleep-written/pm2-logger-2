@@ -92,16 +92,18 @@ export class PM2Mock implements Partial<PM2> {
         ?   this.#processList.filter(x => ids.includes(x.id))
         :   this.#processList;
 
+        let i = 0;
         const emojis = [ '💀', '👀', '💩', '🫠', '🤮' ];
         const interval = setInterval(
             () => {
                 for (const process of processList) {
-                    const emoji = emojis[Math.random() * (emojis.length - 1)];
+                    const emoji = emojis[Math.trunc(Math.random() * (emojis.length - 1))];
                     const message: string[] = [
                         `[${styleText('blueBright', process.name)}]:`,
-                        emoji.padStart(Math.trunc(Math.random() * 20), ' ')
+                        emoji.padStart(Math.trunc((Math.sin(i) * 32) + 48), ' ')
                     ];
 
+                    i += Math.PI / 8;
                     log.emit('stdout', message.join(' '));
                 }
             },

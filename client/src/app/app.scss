@@ -22,6 +22,10 @@
             border-radius: 0;
         }
 
+        mat-sidenav-content {
+            overflow: auto;
+        }
+
         router-outlet {
             display: none;
         }

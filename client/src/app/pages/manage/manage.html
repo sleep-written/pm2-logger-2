@@ -1,0 +1,26 @@
+<div class="header">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Process Monitor</mat-card-title>
+        </mat-card-header>
+    </mat-card>
+
+</div>
+
+<div class="body">
+    <mat-card>
+        <mat-card-content>
+            <app-pm2-process-list
+            (pm2Process)="this.pm2Process.set($event)">
+            </app-pm2-process-list>
+        </mat-card-content>
+    </mat-card>
+    
+    <mat-card>
+        <mat-card-content>
+            <app-pm2-process-log
+            [pm2Process]="this.pm2Process()">
+            </app-pm2-process-log>
+        </mat-card-content>
+    </mat-card>
+</div>
