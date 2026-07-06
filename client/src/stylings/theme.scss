@@ -8,13 +8,17 @@
 html {
   height: 100%;
 
-  --mat-sys-primary: light-dark(#ff9900, #ff9900);
-  --mat-sys-on-primary: light-dark(#ffffff, #000000);
+  --mat-sys-primary: light-dark(#ff9900, #dd8400);
+  --mat-sys-on-primary: light-dark(#000000, #000000);
 
   --mat-sys-secondary: light-dark(#ff0000, #ff0000);
   --mat-sys-on-secondary: light-dark(#ffffff, #000000);
 
   --mat-sys-surface: light-dark(#ffffff, #000000);
+  --mat-sys-on-surface: light-dark(#000000, #ffffff);
+  
+  --mat-sys-surface-variant: light-dark(#f9f9f9, #151515);
+  --mat-sys-on-surface-variant: light-dark(#000000, #ffffff);
 
   @include mat.theme(
     (
@@ -26,6 +30,8 @@ html {
       density: 0,
     )
   );
+  
+  @include mat.system-classes();
 }
 
 body {
