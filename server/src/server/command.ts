@@ -1,11 +1,18 @@
 import type { CommandTarget } from '@bleed-believer/commander';
 
+import { createServer } from 'node:http';
+import { SocketServer } from '@bleed-believer/ws';
 import { styleText } from 'node:util';
 import { Command } from '@bleed-believer/commander';
 import express from 'express';
 
 import { endpointsRouter } from './endpoints/router.js';
 import { environment } from '@/environment.js';
+import { injector } from '@/injector.js';
+
+import { socketRouter } from './sockets/router.js';
+import { PM2Mock } from './pm2.mock.js';
+import { PM2 } from '@utils/pm2';
 
 /**
  * `server` command — boots the Express web server and keeps it listening until
@@ -14,18 +21,39 @@ import { environment } from '@/environment.js';
  */
 export const serverCommand = new Command({
     positionals: 'server',
+    flags: {
+        mockPm2: {
+            type: 'boolean',
+            description: [
+                `Replaces the real pm2 wrapper for a fake pm2 wrapper`,
+                `implementation. For testing purposes.`
+            ].join('\n')
+        }
+    },
     description: [
         'Initializes the web server to monit active pm2',
         'project instances. You can change the port with',
         `the environment variable ${styleText('yellow', 'PM2_LOGGER_PORT')}.`
     ].join('\n'),
-    callback: () => new class implements CommandTarget {
+    callback: c => new class implements CommandTarget {
         async onInit(): Promise<void> {
-            const app = express();
-            app.use(endpointsRouter);
+            if (c.flags.mockPm2) {
+                injector.provide(PM2, PM2Mock);
+                console.info(`[${styleText('blueBright',  'MOCK')}] PM2 → PM2Mock`);
+            }
 
-            await new Promise<void>(async (resolve, reject) => {
-                const server = app.listen(await environment.get('port'));
+            const port = await environment.get('port');
+            await new Promise<void>((resolve, reject) => {
+                const app = express();
+                app.use(endpointsRouter);
+                app.get('*hola', (req) => { req.params.hola })
+
+                const server = createServer(app);
+                new SocketServer()
+                    .use(socketRouter)
+                    .bootstrap(server);
+
+                server.listen(port);
                 server.once('error', err => reject(err));
                 server.once('close', () => resolve());
 
@@ -39,7 +67,11 @@ export const serverCommand = new Command({
 
                 process.once('SIGINT', destroy);
                 process.once('SIGTERM', destroy);
-                console.info('Server is listening!');
+                console.info(
+                    `[${styleText('greenBright', 'SERV')}]`,
+                    `Port: ${styleText('blueBright', port.toString())};`,
+                    'listening!'
+                );
             });
             
             console.info('Server is destroyed...');

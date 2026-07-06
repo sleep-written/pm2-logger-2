@@ -56,7 +56,7 @@ export const asyncSpawn = <
         }
         
         if (stderr.length > 0) {
-            out.stdout = typeof options?.encoding === 'string'
+            out.stderr = typeof options?.encoding === 'string'
             ?   Buffer.concat(stderr).toString(options.encoding).trim()
             :   Buffer.concat(stderr);
         }

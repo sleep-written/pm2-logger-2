@@ -1,81 +1,129 @@
-import type { PM2Inject, PM2Process } from './interfaces/index.js';
+import type { PM2Inject, PM2Logger, PM2Process } from './interfaces/index.js';
 
-import { toCamelCase } from './to-camel-case.js';
+import { stripVTControlCharacters } from 'node:util';
+import { EventEmitter } from 'node:events';
+import { spawn } from 'node:child_process';
+
+import { PM2CLIError } from './pm2-cli.error.js';
 import { asyncSpawn } from '@utils/async-spawn';
 
 export class PM2 {
     #injected: Required<PM2Inject>;
+    #env: NodeJS.ProcessEnv;
 
     constructor(inject?: PM2Inject) {
         this.#injected = {
-            asyncSpawn: inject?.asyncSpawn?.bind(inject)    ??  asyncSpawn
+            asyncSpawn: inject?.asyncSpawn?.bind(inject)    ?? asyncSpawn,
+            spawn:      inject?.spawn?.bind(inject)         ?? spawn,
+
+            process:    inject?.process                     ?? globalThis.process
         };
+
+        this.#env = { ...this.#injected.process.env };
+        delete this.#env['NODE_OPTIONS'];
     }
 
-    async list(): Promise<PM2Process[]> {
+    async #exec(...args: { toString(): string; }[]): Promise<string | undefined> {
         const { code, stdout, stderr } = await this.#injected.asyncSpawn('pm2', {
             encoding: 'utf-8',
-            args: [ 'jlist' ]
+            args: args.map(x => x.toString()),
+            env: this.#env
         });
 
         if (code !== 0) {
-            throw new Error(stderr ?? stdout ?? 'Unknown error');
+            throw new PM2CLIError(code, stderr ?? stdout);
         }
 
-        const json = JSON.parse(stdout ?? '[]') as unknown[];
-        return json.map((x: any) => ({
-            id:                 x.pm_id,
-            pid:                x.pid,
-            name:               x.name,
-            args:               x.pm2_env.args,
-            nodeArgs:           x.pm2_env.node_args,
+        return typeof stdout === 'string'
+        ?   stripVTControlCharacters(stdout)
+        :   undefined;
+    }
 
-            cwd:                x.pm2_env.pm_cwd,
-            pidPath:            x.pm2_env.pm_pid_path,
-            execPath:           x.pm2_env.pm_exec_path,
-            errLogPath:         x.pm2_env.pm_err_log_path,
-            outLogPath:         x.pm2_env.pm_out_log_path,
+    async list(): Promise<PM2Process[]> {
+        const text = await this.#exec('jlist') ?? '[]';
+        const json = JSON.parse(text) as any[];
+        return json.map(x => ({
+            id:             x.pm_id,
+            pid:            x.pid,
+            name:           x.name,
+            args:           x.pm2_env.args ?? [],
+            nodeArgs:       x.pm2_env.node_args,
+            execMode:       x.pm2_env.exec_mode,
+            namespace:      x.pm2_env.namespace,
+            interpreter:    x.pm2_env.exec_interpreter,
 
-            version:            x.pm2_env.version,
-            nodeVersion:        x.pm2_env.node_version,
+            cwd:            x.pm2_env.pm_cwd,
+            pidPath:        x.pm2_env.pm_pid_path,
+            execPath:       x.pm2_env.pm_exec_path,
+            outLogPath:     x.pm2_env.pm_out_log_path,
+            errLogPath:     x.pm2_env.pm_err_log_path,
 
-            createdAt:          new Date(x.pm2_env.created_at),
-            restartTime:        x.pm2_env.restart_time,
-            killRetryTime:      x.pm2_env.kill_retry_time,
-            unstableRestarts:   x.pm2_env.unstable_restarts,
-
-            status:             x.pm2_env.status,
-            uniqueId:           x.pm2_env.unique_id,
-            namespace:          x.pm2_env.namespace,
-
-            execMode:           x.pm2_env.exec_mode,
-            filterEnv:          x.pm2_env.filter_env,
-            execInterpreter:    x.pm2_env.exec_interpreter,
+            status:         x.pm2_env.status,
+            uptime:         x.pm2_env.pm_uptime,
+            createdAt:      new Date(x.pm2_env.created_at),
             
-            pmx:                !!x.pm2_env.pmx,
-            watch:              !!x.pm2_env.watch,
-            vizion:             !!x.pm2_env.vizion,
-            kmLink:             !!x.pm2_env.km_link,
-            treekill:           !!x.pm2_env.treekill,
-            autostart:          !!x.pm2_env.autostart,
-            mergeLogs:          !!x.pm2_env.merge_logs,
-            automation:         !!x.pm2_env.automation,
-            windowsHide:        !!x.pm2_env.windowsHide,
-            autorestart:        !!x.pm2_env.autorestart,
-            vizionRunning:      !!x.pm2_env.vizion_running,
-
-            username:           x.pm2_env.username,
-            instanceVar:        x.pm2_env.instance_var,
-            
-            env:                x.pm2_env.env,
-            monit:              toCamelCase(x.monit),
-            axmMonitor:         toCamelCase(x.pm2_env.axm_monitor),
-            axmOptions:         toCamelCase(x.pm2_env.axm_options),
-            axmActions:         x.pm2_env.axm_actions.map((o: any) => ({
-                name:   o.action_name,
-                type:   o.action_type,
-                arity:  o.arity,
-            }))
+            env:            x.pm2_env.env,
+            monit:          {
+                cpu:        x.monit.cpu,
+                memory:     x.monit.memory,
+            },
+            instance:       {
+                id:         x.pm2_env.unique_id,
+                value:      x.pm2_env[x.pm2_env.instance_var],
+            },
         }));
+    }
+
+    async getProcessIds(processName: string): Promise<number[]> {
+        const text = await this.#exec('id', processName) ?? '[]';
+        const json = JSON.parse(text) as number[];
+        if (!Array.isArray(json) || json.some(x => isNaN(x))) {
+            throw new PM2CLIError(0, `Invalid JSON array number: ${text}`);
+        }
+
+        return json;
+    }
+
+    async stop(processId: number, ...otherProcessIds: number[]): Promise<void> {
+        await this.#exec('stop', processId, ...otherProcessIds, '-s');
+    }
+
+    async start(processId: number, ...otherProcessIds: number[]): Promise<void> {
+        await this.#exec('start', processId, ...otherProcessIds, '-s');
+    }
+
+    async restart(processId: number, ...otherProcessIds: number[]): Promise<void> {
+        await this.#exec('restart', processId, ...otherProcessIds, '-s');
+    }
+
+    log(processIds: number[], encoding?: BufferEncoding): PM2Logger {
+        const child = this.#injected.spawn(
+            'pm2', [ 'log', ...processIds.map(x => x.toString()) ],
+            { env: this.#env }
+        );
+
+
+        const logger = new EventEmitter() as PM2Logger;
+        Object.defineProperty(logger, 'killed', {
+            get: () => child.killed
+        });
+
+        logger.kill = () => {
+            if (!child.killed) {
+                logger.removeAllListeners();
+                child.kill();
+            }
+        };
+
+        logger.wait = new Promise<void>((resolve, reject) => {
+            child.stdout.on('data', (c: Buffer) => logger.emit('stdout', c.toString(encoding ?? 'utf-8')));
+            child.stderr.on('data', (c: Buffer) => logger.emit('stderr', c.toString(encoding ?? 'utf-8')));
+            child.on('error', err => reject(err));
+            child.on('close', () => {
+                resolve();
+            });
+        });
+
+        return logger;
     }
 }

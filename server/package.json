@@ -12,13 +12,18 @@
     "@bleed-believer/cli": "^1.0.3",
     "@types/express": "^5.0.6",
     "@types/node": "^26.0.0",
+    "@types/ws": "^8.18.1",
     "typescript": "^6.0.3"
   },
   "dependencies": {
     "@bleed-believer/commander": "^2.1.0",
+    "@bleed-believer/ws": "^0.0.0",
+    "ansicolor": "^2.0.3",
     "better-sqlite3": "^12.11.1",
     "express": "^5.2.1",
-    "typeorm": "^1.0.0"
+    "path-to-regexp": "^8.4.2",
+    "typeorm": "^1.0.0",
+    "ws": "^8.21.0"
   },
   "allowScripts": {
     "better-sqlite3@12.11.1": true
