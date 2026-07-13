@@ -1,13 +1,14 @@
 import type { CommandTarget } from '@bleed-believer/commander';
 
 import { createServer } from 'node:http';
-import { SocketServer } from '@bleed-believer/ws';
+import { SocketServer } from '@bleed-believer/ws/server';
 import { styleText } from 'node:util';
 import { Command } from '@bleed-believer/commander';
 import express from 'express';
 
 import { endpointsRouter } from './endpoints/router.js';
 import { environment } from '@/environment.js';
+import { dataSource } from '@/data-source.js';
 import { injector } from '@/injector.js';
 
 import { socketRouter } from './sockets/router.js';
@@ -39,19 +40,24 @@ export const serverCommand = new Command({
         async onInit(): Promise<void> {
             if (c.flags.mockPm2) {
                 injector.provide(PM2, PM2Mock);
-                console.info(`[${styleText('blueBright',  'MOCK')}] PM2 → PM2Mock`);
+                console.info(
+                    `[${styleText('greenBright', 'SERV')}]`,
+                    `Initialize database...`
+                );
             }
+
+            await dataSource.initialize();
+            console.info(`[${styleText('blueBright',  'MOCK')}] PM2 → PM2Mock`);
 
             const port = await environment.get('port');
             await new Promise<void>((resolve, reject) => {
                 const app = express();
                 app.use(endpointsRouter);
-                app.get('*hola', (req) => { req.params.hola })
 
                 const server = createServer(app);
-                const wss = new SocketServer()
+                const wss = new SocketServer({ server })
                     .use(socketRouter)
-                    .bootstrap(server);
+                    .bind();
 
                 server.listen(port);
                 server.once('error', err => reject(err));
@@ -59,10 +65,7 @@ export const serverCommand = new Command({
 
                 const destroy = () => {
                     if (server.listening) {
-                        for (const client of wss.clients) {
-                            client.close();
-                        }
-
+                        wss.close();
                         server.close();
                         process.removeAllListeners('SIGINT');
                         process.removeAllListeners('SIGTERM');
@@ -77,8 +80,22 @@ export const serverCommand = new Command({
                     'listening!'
                 );
             });
-            
-            console.info('Server is destroyed...');
+
+            console.info(
+                `[${styleText('greenBright', 'SERV')}]`,
+                'Server is destroyed...'
+            );
+        }
+
+        async onDestroy(): Promise<void> {
+            if (dataSource.isInitialized) {
+                console.info(
+                    `[${styleText('greenBright', 'SERV')}]`,
+                    'Destroying database connection...'
+                );
+                
+                await dataSource.destroy();
+            }
         }
     }
 });

@@ -10,11 +10,15 @@
 :host > button {
     color: var(--mat-sys-on-surface-container-highest);
     background-color: var(--mat-sys-surface-container-highest);
-
     border-radius: 0;
 
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: flex-start;
+
+    &.selected {
+        color: var(--mat-sys-on-primary);
+        background-color: var(--mat-sys-primary);
+    }
 }

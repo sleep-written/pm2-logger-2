@@ -21,7 +21,9 @@ class="mat-text-on-primary mat-bg-primary">
   mode="side"
   class="mat-text-surface-variant mat-bg-surface-variant"
   [opened]="opened">
-    joder chaval
+    <app-sidenav
+    (navigationEnd)="this.opened.set(false)">
+    </app-sidenav>
   </mat-sidenav>
 
   <mat-sidenav-content>

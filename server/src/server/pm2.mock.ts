@@ -107,7 +107,7 @@ export class PM2Mock implements Partial<PM2> {
                     log.emit('stdout', message.join(' '));
                 }
             },
-            1000
+            250
         );
 
         controller.signal.onabort = () => clearInterval(interval);

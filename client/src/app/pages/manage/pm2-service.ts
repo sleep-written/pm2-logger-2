@@ -1,5 +1,6 @@
 import { inject, Service } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { SocketClient } from '@bleed-believer/ws/client';
 import { HttpClient } from '@angular/common/http';
 
 import { PM2Logger, PM2Process } from './interfaces';
@@ -13,44 +14,20 @@ export class PM2Service {
         return firstValueFrom(obs);
     }
 
-    getProcessLog(name: string): PM2Logger {
-        let stdoutEvent: ((message: string) => unknown)[] = [];
-        let stderrEvent: ((message: string) => unknown)[] = [];
-
-        const ws = new WebSocket(`/log/${name}`);
-        ws.addEventListener('message', ({ data }) => {
-            const json = JSON.parse(data);
-            switch (json.type) {
-                case 'stdout': {
-                    for (const callback of stdoutEvent) {
-                        callback(json.html);
-                    }
-
-                    break;
-                }
-
-                case 'stderr': {
-                    for (const callback of stderrEvent) {
-                        callback(json.html);
-                    }
-
-                    break;
-                }
-            }
-        });
-
+    async getProcessLog(name: string): Promise<PM2Logger> {
+        const wsClient = new SocketClient(`/log/${name}`, { reconnectMs: 1_000 });
+        await wsClient.connect();
         return {
-            onStdout(callback: (message: string) => unknown): void {
-                stdoutEvent.push(callback);
-            },
-            onStderr(callback: (message: string) => unknown): void {
-                stderrEvent.push(callback);
-            },
-            destroy: () => {
-                stdoutEvent = [];
-                stderrEvent = [];
-                ws.close()
-            }
-        };
+            get listening() { return wsClient.listening },
+            destroy: () => wsClient.close(),
+            onStderr: c => wsClient.on('socketMessage', m => {
+                const json = JSON.parse(m);
+                if (json.type === 'stderr') c(json.html);
+            }),
+            onStdout: c => wsClient.on('socketMessage', m => {
+                const json = JSON.parse(m);
+                if (json.type === 'stdout') c(json.html);
+            }),
+        }
     }
 }

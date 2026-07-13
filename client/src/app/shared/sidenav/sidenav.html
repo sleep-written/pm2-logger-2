@@ -1,0 +1,15 @@
+@if (this.loading()) {
+    <mat-progress-spinner
+    mode="indeterminate">
+    </mat-progress-spinner>
+} @else {
+    @for (menu of this.dataSource(); track menu.id) {
+        <button mat-flat-button
+        type="button"
+        routerLinkActive="active"
+        [routerLink]="menu.path">
+            <mat-icon>{{ menu.icon }}</mat-icon>
+            <span>{{ menu.text }}</span>
+        </button>
+    }
+}

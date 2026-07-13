@@ -1,4 +1,4 @@
-import { SocketServerRouter } from '@bleed-believer/ws';
+import { SocketServerRouter } from '@bleed-believer/ws/server';
 import { injector } from '@/injector.js';
 import { parse } from 'ansicolor';
 import { PM2 } from '@utils/pm2';

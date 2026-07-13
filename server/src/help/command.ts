@@ -12,7 +12,7 @@ export const helpCommand = new Command({
     positionals: 'help :parts*',
     callback: () => ({
         async onInit(): Promise<void> {
-            for (const { path, flags, description } of commander.docs()) {
+            for (const { path, description } of commander.docs()) {
                 const commandPath = path
                     .map(x => x.startsWith(':')
                         ?   styleText('yellow', x)

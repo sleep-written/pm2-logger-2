@@ -19,6 +19,7 @@
     <mat-card>
         <mat-card-content>
             <app-pm2-process-log
+            [maxLength]="1000"
             [pm2Process]="this.pm2Process()">
             </app-pm2-process-log>
         </mat-card-content>

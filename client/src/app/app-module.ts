@@ -10,6 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { SidenavModule } from '@shared/sidenav';
+
 import { provideBrowserGlobalErrorListeners } from '@angular/core';
 import { MAT_ICON_DEFAULT_OPTIONS, MatIconDefaultOptions } from '@angular/material/icon';
 
@@ -26,6 +28,8 @@ import { MAT_ICON_DEFAULT_OPTIONS, MatIconDefaultOptions } from '@angular/materi
     MatButtonModule,
     MatSidenavModule,
     MatToolbarModule,
+
+    SidenavModule,
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),

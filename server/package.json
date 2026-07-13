@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@bleed-believer/commander": "^2.1.0",
-    "@bleed-believer/ws": "^0.0.1",
+    "@bleed-believer/ws": "^0.2.0",
     "ansicolor": "^2.0.3",
     "better-sqlite3": "^12.11.1",
     "express": "^5.2.1",
