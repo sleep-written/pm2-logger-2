@@ -47,10 +47,6 @@ deploy_application_staging:
   only:   [ staging ]
   environment:
     name: staging
-  variables:
-    # Only knob delivered from GitLab. Override it in the project's CI/CD
-    # settings; the app reads it as a CLI flag, not from the environment.
-    PM2_LOGGER_PORT: "8080"
   script:
     # Prepare client-v1
     - cd ./client
@@ -62,6 +58,7 @@ deploy_application_staging:
     - npm ci
     - node --run build
 
-    # Deploy application
-    - pm2 start --name @pm2-logger/server ./dist/index.js -- server --port "$PM2_LOGGER_PORT"
+    # Deploy application. Pass --port only when the variable carries a value;
+    # otherwise omit the flag entirely and let the app use its own default.
+    - pm2 start --name @pm2-logger/server ./dist/index.js -- server ${PM2_LOGGER_PORT:+--port "$PM2_LOGGER_PORT"}
     - pm2 save
