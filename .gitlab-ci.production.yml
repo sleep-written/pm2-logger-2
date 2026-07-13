@@ -1,0 +1,64 @@
+stop_pm2_services_production:
+  stage:  prepare
+  tags:   [ production ]
+  only:   [ master ]
+  environment:
+    name: production
+  script:
+    - echo $(pm2 stop @pm2-logger/server)
+    - echo $(pm2 delete @pm2-logger/server)
+    - pm2 save
+
+prepare_db_production:
+  stage:  prepare
+  tags:   [ production ]
+  only:   [ master ]
+  needs:  [ stop_pm2_services_production ]
+  environment:
+    name: production
+  script:
+    # Prepare environment
+    - cd server
+    - npm ci
+
+    # Run migrations against the persistent database
+    # (~/.config/pm2-logger/database.db, outside the build dir)
+    - node --run typeorm -- -d ./src/data-source.ts migration:run
+
+testing_server_production:
+  stage:  test
+  tags:   [ production ]
+  only:   [ master ]
+  environment:
+    name: production
+  script:
+    # Prepare environment
+    - cd server
+    - npm ci
+
+    # Launch tests against a throwaway database, so they never touch the
+    # persistent one at ~/.config/pm2-logger/database.db
+    - export PM2_LOGGER_DATABASE="$(mktemp -d)/database.db"
+    - node --run test
+
+deploy_application_production:
+  stage:  deploy
+  tags:   [ production ]
+  only:   [ master ]
+  environment:
+    name: production
+  script:
+    # Prepare client-v1
+    - cd ./client
+    - npm ci
+    - node --run build
+
+    # Prepare server
+    - cd ../server
+    - npm ci
+    - node --run build
+
+    # Deploy application. Pass --port only when the variable carries a value;
+    # otherwise omit the flag entirely and let the app use its own default.
+    - pm2 start --name @pm2-logger/server ./dist/index.js -- server ${PM2_LOGGER_PORT:+--port "$PM2_LOGGER_PORT"}
+    - pm2 save

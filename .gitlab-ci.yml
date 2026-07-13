@@ -8,3 +8,4 @@ stages:
 
 include:
   - '.gitlab-ci.staging.yml'
+  - '.gitlab-ci.production.yml'
