@@ -7,7 +7,6 @@ import { Command } from '@bleed-believer/commander';
 import express from 'express';
 
 import { endpointsRouter } from './endpoints/router.js';
-import { environment } from '@/environment.js';
 import { dataSource } from '@/data-source.js';
 import { injector } from '@/injector.js';
 
@@ -23,8 +22,17 @@ import { PM2 } from '@utils/pm2';
 export const serverCommand = new Command({
     positionals: 'server',
     flags: {
-        mockPm2: {
+        port: {
+            type: 'number',
+            short: 'p',
+            description: [
+                `The port which the server will be mounted. By default`,
+                `the port is ${styleText('blueBright', '8080')}.`
+            ].join('\n')
+        },
+        mock: {
             type: 'boolean',
+            short: 'm',
             description: [
                 `Replaces the real pm2 wrapper for a fake pm2 wrapper`,
                 `implementation. For testing purposes.`
@@ -33,12 +41,11 @@ export const serverCommand = new Command({
     },
     description: [
         'Initializes the web server to monit active pm2',
-        'project instances. You can change the port with',
-        `the environment variable ${styleText('yellow', 'PM2_LOGGER_PORT')}.`
+        'project instances.'
     ].join('\n'),
     callback: c => new class implements CommandTarget {
         async onInit(): Promise<void> {
-            if (c.flags.mockPm2) {
+            if (c.flags.mock) {
                 injector.provide(PM2, PM2Mock);
                 console.info(
                     `[${styleText('greenBright', 'SERV')}]`,
@@ -49,7 +56,7 @@ export const serverCommand = new Command({
             await dataSource.initialize();
             console.info(`[${styleText('blueBright',  'MOCK')}] PM2 → PM2Mock`);
 
-            const port = await environment.get('port');
+            const port = c.flags.port ?? 8080;
             await new Promise<void>((resolve, reject) => {
                 const app = express();
                 app.use(endpointsRouter);

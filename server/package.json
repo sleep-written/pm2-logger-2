@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "typeorm": "bleed start ./node_modules/typeorm/cli.js --",
-    "watch": "bleed start ./src/index.ts --watch --",
+    "build": "bleed build --config ./tsconfig.build.json",
     "start": "bleed start ./src/index.ts --",
+    "watch": "bleed start ./src/index.ts --watch --",
     "test": "node --import @bleed-believer/cli --test --"
   },
   "devDependencies": {

@@ -1,7 +1,6 @@
 import { Command, Commander } from '@bleed-believer/commander';
 
 import { serverCommand } from './server/command.js';
-import { setupCommand } from './setup/command.js';
 import { helpCommand } from './help/command.js';
 import { styleText } from 'node:util';
 
@@ -11,7 +10,6 @@ import { styleText } from 'node:util';
  */
 export const commander = new Commander([
     serverCommand,
-    setupCommand,
     helpCommand,
     // Fallback: any input not matched by the commands above lands here.
     new Command({

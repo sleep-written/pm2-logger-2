@@ -1,11 +1,10 @@
-import { environment } from '@/environment.js';
 import { resolve } from 'node:path';
 import { Router } from 'express';
 import { stat } from 'node:fs/promises';
 
 const root = resolve(
-    environment.path,
-    '../client/dist/client/browser'
+    import.meta.dirname,
+    '../../../../client/dist/client/browser'
 );
 
 /**

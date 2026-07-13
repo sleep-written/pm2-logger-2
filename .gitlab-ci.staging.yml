@@ -1,0 +1,67 @@
+stop_pm2_services_staging:
+  stage:  prepare
+  tags:   [ staging ]
+  only:   [ staging ]
+  environment:
+    name: staging
+  script:
+    - echo $(pm2 stop @pm2-logger/server)
+    - echo $(pm2 delete @pm2-logger/server)
+    - pm2 save
+
+prepare_db_staging:
+  stage:  prepare
+  tags:   [ staging ]
+  only:   [ staging ]
+  needs:  [ stop_pm2_services_staging ]
+  environment:
+    name: staging
+  script:
+    # Prepare environment
+    - cd server
+    - npm ci
+
+    # Run migrations against the persistent database
+    # (~/.config/pm2-logger/database.db, outside the build dir)
+    - node --run typeorm -- -d ./src/data-source.ts migration:run
+
+testing_server_staging:
+  stage:  test
+  tags:   [ staging ]
+  only:   [ staging ]
+  environment:
+    name: staging
+  script:
+    # Prepare environment
+    - cd server
+    - npm ci
+
+    # Launch tests against a throwaway database, so they never touch the
+    # persistent one at ~/.config/pm2-logger/database.db
+    - export PM2_LOGGER_DATABASE="$(mktemp -d)/database.db"
+    - node --run test
+
+deploy_application_staging:
+  stage:  deploy
+  tags:   [ staging ]
+  only:   [ staging ]
+  environment:
+    name: staging
+  variables:
+    # Only knob delivered from GitLab. Override it in the project's CI/CD
+    # settings; the app reads it as a CLI flag, not from the environment.
+    PM2_LOGGER_PORT: "8080"
+  script:
+    # Prepare client-v1
+    - cd ./client
+    - npm ci
+    - node --run build -- --configuration development
+
+    # Prepare server
+    - cd ../server
+    - npm ci
+    - node --run build
+
+    # Deploy application
+    - pm2 start --name @pm2-logger/server ./dist/index.js -- server --port "$PM2_LOGGER_PORT"
+    - pm2 save
